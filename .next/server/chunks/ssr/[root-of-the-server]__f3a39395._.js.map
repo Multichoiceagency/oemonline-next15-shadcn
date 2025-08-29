@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 11, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/enesk/Documents/oemonline-next15-shadcn/app/admin/vehicles/page.tsx"],"sourcesContent":["export default function VehiclesPage(){ return <h1>Vehicles Manager</h1>; }"],"names":[],"mappings":";;;;;;AAAe,SAAS;IAAgB,qBAAO,4RAAC;kBAAG;;;;;;AAAuB","debugId":null}}]
+}

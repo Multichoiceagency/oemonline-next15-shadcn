@@ -4,7 +4,7 @@ const TECDOC_API_KEY = process.env.TECDOC_API_KEY!;
 const TECDOC_LANG = process.env.TECDOC_LANG_DEFAULT!;
 const TECDOC_COUNTRY = process.env.TECDOC_LINKAGE_COUNTRY!;
 
-export async function tecdocRequest(method: string, params: any) {
+export async function tecdocRequest(method: string, params: Record<string, unknown>) {
   const body = {
     [method]: {
       provider: TECDOC_PROVIDER_ID,
