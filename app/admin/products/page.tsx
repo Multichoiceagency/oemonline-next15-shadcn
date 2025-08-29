@@ -1,0 +1,1 @@
+export default function ProductsPage(){ return <h1>Products Manager</h1>; }
