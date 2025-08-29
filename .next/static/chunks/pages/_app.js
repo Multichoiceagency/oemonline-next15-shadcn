@@ -1,0 +1,14 @@
+__turbopack_load_page_chunks__("/_app", [
+  "static/chunks/ee637_next_dist_compiled_next-devtools_index_a7f7cf3c.js",
+  "static/chunks/ee637_next_dist_compiled_45656f0e._.js",
+  "static/chunks/ee637_next_dist_shared_lib_81fb1249._.js",
+  "static/chunks/ee637_next_dist_client_77c7ab7d._.js",
+  "static/chunks/ee637_next_dist_df81d1a1._.js",
+  "static/chunks/ee637_next_app_83b80dde.js",
+  "static/chunks/[next]_entry_page-loader_ts_84e724c1._.js",
+  "static/chunks/af1e5_react-dom_a09f7ca9._.js",
+  "static/chunks/5faeb__pnpm_029c5169._.js",
+  "static/chunks/[root-of-the-server]__d298911d._.js",
+  "static/chunks/Documents_oemonline-next15-shadcn_pages__app_2da965e7._.js",
+  "static/chunks/turbopack-Documents_oemonline-next15-shadcn_pages__app_3dc36cf9._.js"
+])

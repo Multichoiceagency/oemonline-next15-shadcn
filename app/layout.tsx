@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
-import { GeistSans } from 'geist/font/sans'
-import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { Geist } from "next/font/google";
+
+const GeistSans = Geist({ subsets: ['latin'], weight: ['100', '400', '700'] })
+const GeistMono = Geist({ subsets: ['latin'], weight: ['400', '700'], style: ['normal'] })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
+  title: 'Oemonline',
   description: 'Created with v0',
   generator: 'v0.app',
 }
@@ -17,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+      <body className={`font-sans ${GeistSans.className} ${GeistMono.className}`}>
         {children}
         <Analytics />
       </body>

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
+    {"offset": {"line": 11, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/enesk/Documents/oemonline-next15-shadcn/app/page.tsx"],"sourcesContent":["import React from 'react'\r\n\r\nfunction home() {\r\n  return (\r\n    <div>home</div>\r\n  )\r\n}\r\n\r\nexport default home"],"names":[],"mappings":";;;;;;AAEA,SAAS;IACP,qBACE,2ZAAC;kBAAI;;;;;;AAET;uCAEe","debugId":null}}]
+}

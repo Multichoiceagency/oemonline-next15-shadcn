@@ -1,0 +1,22 @@
+{
+  "pages": {
+    "/dashboard/catalog/search/page": [
+      "static/chunks/5faeb__pnpm_75d6ec42._.js",
+      "static/chunks/[root-of-the-server]__08526dbe._.css",
+      "static/chunks/Documents_oemonline-next15-shadcn_app_layout_tsx_d5dd96d1._.js",
+      "static/chunks/ee637_next_dist_client_components_builtin_global-error_c7dbde18.js",
+      "static/chunks/Documents_oemonline-next15-shadcn_34977c8e._.js",
+      "static/chunks/5faeb__pnpm_32fb8053._.js",
+      "static/chunks/Documents_oemonline-next15-shadcn_app_dashboard_catalog_search_page_tsx_c7dbde18._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_f63c500c._.js",
+      "static/chunks/ee637_next_dist_compiled_react-dom_8d8b5968._.js",
+      "static/chunks/ee637_next_dist_compiled_next-devtools_index_8bfc5979.js",
+      "static/chunks/ee637_next_dist_compiled_35c2f0e1._.js",
+      "static/chunks/ee637_next_dist_client_1db68529._.js",
+      "static/chunks/ee637_next_dist_90ed5087._.js",
+      "static/chunks/b12d4_@swc_helpers_cjs_41b163fd._.js",
+      "static/chunks/Documents_oemonline-next15-shadcn_a0ff3932._.js",
+      "static/chunks/turbopack-Documents_oemonline-next15-shadcn_9e8a6a59._.js"
+    ]
+  }
+}

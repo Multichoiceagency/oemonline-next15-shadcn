@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/enesk/Documents/oemonline-next15-shadcn/app/dashboard/catalog/categories/page.tsx"],"sourcesContent":["/* eslint-disable @typescript-eslint/no-explicit-any */\r\n\"use client\";\r\nimport * as React from \"react\";\r\n\r\nexport default function Page() {\r\n  const [data, setData] = React.useState<any>(null);\r\n  React.useEffect(() => {\r\n    (async () => {\r\n      const r = await fetch(\"/api/categories\");\r\n      setData(await r.json());\r\n    })();\r\n  }, []);\r\n  return (\r\n    <pre className=\"px-6 text-xs overflow-auto\">\r\n      {JSON.stringify(data, null, 2)}\r\n    </pre>\r\n  );\r\n}\r\n"],"names":[],"mappings":"AAAA,qDAAqD;;;;;AAErD;;;AADA;;AAGe,SAAS;;IACtB,MAAM,CAAC,MAAM,QAAQ,GAAG,sVAAc,CAAM;IAC5C,uVAAe;0BAAC;YACd;kCAAC;oBACC,MAAM,IAAI,MAAM,MAAM;oBACtB,QAAQ,MAAM,EAAE,IAAI;gBACtB;aAAC;QACH;yBAAG,EAAE;IACL,qBACE,0WAAC;QAAI,WAAU;kBACZ,KAAK,SAAS,CAAC,MAAM,MAAM;;;;;;AAGlC;GAbwB;KAAA","debugId":null}}]
+}

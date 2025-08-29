@@ -1,0 +1,3 @@
+{
+  "/api/assigned-articles-by-ids/route": "app/api/assigned-articles-by-ids/route.js"
+}

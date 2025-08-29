@@ -47,6 +47,60 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
+// Validate ../../app/dashboard/catalog/articles/assigned/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/articles/assigned/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/articles/assigned">
+}
+
+// Validate ../../app/dashboard/catalog/articles/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/articles/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/articles">
+}
+
+// Validate ../../app/dashboard/catalog/articles/state/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/articles/state/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/articles/state">
+}
+
+// Validate ../../app/dashboard/catalog/brands/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/brands/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/brands">
+}
+
+// Validate ../../app/dashboard/catalog/categories/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/categories/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/categories">
+}
+
+// Validate ../../app/dashboard/catalog/motor/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/motor/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/motor">
+}
+
+// Validate ../../app/dashboard/catalog/plate/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/plate/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/plate">
+}
+
+// Validate ../../app/dashboard/catalog/search/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/search/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/search">
+}
+
+// Validate ../../app/dashboard/catalog/vehicles/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/catalog/vehicles/page.js")
+  handler satisfies AppPageConfig<"/dashboard/catalog/vehicles">
+}
+
 // Validate ../../app/dashboard/categories/page.tsx
 {
   const handler = {} as typeof import("../../app/dashboard/categories/page.js")
@@ -83,16 +137,46 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/dashboard/vehicles">
 }
 
+// Validate ../../app/page.tsx
+{
+  const handler = {} as typeof import("../../app/page.js")
+  handler satisfies AppPageConfig<"/">
+}
+
 // Validate ../../app/api/admin/stats/route.ts
 {
   const handler = {} as typeof import("../../app/api/admin/stats/route.js")
   handler satisfies RouteHandlerConfig<"/api/admin/stats">
 }
 
+// Validate ../../app/api/article-ids-with-state/route.ts
+{
+  const handler = {} as typeof import("../../app/api/article-ids-with-state/route.js")
+  handler satisfies RouteHandlerConfig<"/api/article-ids-with-state">
+}
+
+// Validate ../../app/api/assigned-articles-by-ids/route.ts
+{
+  const handler = {} as typeof import("../../app/api/assigned-articles-by-ids/route.js")
+  handler satisfies RouteHandlerConfig<"/api/assigned-articles-by-ids">
+}
+
+// Validate ../../app/api/brands/route.ts
+{
+  const handler = {} as typeof import("../../app/api/brands/route.js")
+  handler satisfies RouteHandlerConfig<"/api/brands">
+}
+
 // Validate ../../app/api/categories/route.ts
 {
   const handler = {} as typeof import("../../app/api/categories/route.js")
   handler satisfies RouteHandlerConfig<"/api/categories">
+}
+
+// Validate ../../app/api/motor/route.ts
+{
+  const handler = {} as typeof import("../../app/api/motor/route.js")
+  handler satisfies RouteHandlerConfig<"/api/motor">
 }
 
 // Validate ../../app/api/orders/route.ts
@@ -119,10 +203,28 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies RouteHandlerConfig<"/api/search">
 }
 
+// Validate ../../app/api/subcategories/route.ts
+{
+  const handler = {} as typeof import("../../app/api/subcategories/route.js")
+  handler satisfies RouteHandlerConfig<"/api/subcategories">
+}
+
+// Validate ../../app/api/tecdoc/echo/route.ts
+{
+  const handler = {} as typeof import("../../app/api/tecdoc/echo/route.js")
+  handler satisfies RouteHandlerConfig<"/api/tecdoc/echo">
+}
+
 // Validate ../../app/api/users/route.ts
 {
   const handler = {} as typeof import("../../app/api/users/route.js")
   handler satisfies RouteHandlerConfig<"/api/users">
+}
+
+// Validate ../../app/api/vehicle-details/route.ts
+{
+  const handler = {} as typeof import("../../app/api/vehicle-details/route.js")
+  handler satisfies RouteHandlerConfig<"/api/vehicle-details">
 }
 
 // Validate ../../app/api/vehicles/route.ts
