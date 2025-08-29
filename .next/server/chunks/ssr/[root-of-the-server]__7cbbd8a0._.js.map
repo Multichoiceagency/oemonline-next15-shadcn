@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
-    {"offset": {"line": 11, "column": 0}, "map": {"version":3,"sources":["file:///Users/macbookpro/Documents/GitHub/oemonline-next15-shadcn/app/admin/users/page.tsx"],"sourcesContent":["export default function UsersPage(){ return <h1>Users Manager</h1>; }"],"names":[],"mappings":";;;;;;AAAe,SAAS;IAAa,qBAAO,8OAAC;kBAAG;;;;;;AAAoB","debugId":null}}]
-}

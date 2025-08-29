@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":[],"names":[],"mappings":"","debugId":null}},
-    {"offset": {"line": 43, "column": 0}, "map": {"version":3,"sources":["file:///Users/macbookpro/Documents/GitHub/oemonline-next15-shadcn/app/api/admin/stats/route.ts"],"sourcesContent":["import prisma from \"@/lib/prisma\";\n\nexport async function GET() {\n  const [orders, products, users] = await Promise.all([\n    prisma.order.count(),\n    prisma.product.count(),\n    prisma.user.count(),\n  ]);\n\n  const revenueData = await prisma.order.aggregate({\n    _sum: { total: true },\n  });\n\n  return Response.json({\n    orders,\n    products,\n    users,\n    revenue: revenueData._sum.total || 0,\n  });\n}\n"],"names":[],"mappings":";;;;;;;;;;AAEO,eAAe;IACpB,MAAM,CAAC,QAAQ,UAAU,MAAM,GAAG,MAAM,QAAQ,GAAG,CAAC;QAClD,OAAO,KAAK,CAAC,KAAK;QAClB,OAAO,OAAO,CAAC,KAAK;QACpB,OAAO,IAAI,CAAC,KAAK;KAClB;IAED,MAAM,cAAc,MAAM,OAAO,KAAK,CAAC,SAAS,CAAC;QAC/C,MAAM;YAAE,OAAO;QAAK;IACtB;IAEA,OAAO,SAAS,IAAI,CAAC;QACnB;QACA;QACA;QACA,SAAS,YAAY,IAAI,CAAC,KAAK,IAAI;IACrC;AACF","debugId":null}}]
-}
