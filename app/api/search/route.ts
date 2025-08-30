@@ -2,40 +2,71 @@
 // app/api/search/route.ts
 import { NextResponse } from "next/server"
 import { tecdocCall, qp, qpn } from "@/lib/tecdoc"
-import { logDebug, logError } from "@/lib/logger"
+import { extractArray } from "@/lib/normalize"
+import { logError } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
-  const q = qp(req, "q") || undefined
-  const page = qpn(req, "page", 1)
-  const perPage = qpn(req, "perPage", 25)
-
-  const brandNoRaw = qp(req, "brandNo") // "30" of "30,41"
-  const genericArticleId = qpn(req, "genericArticleId")
   const carId = qpn(req, "carId")
-  const linkingTargetType = qp(req, "linkingTargetType", "P")
+  const genericArticleId = qpn(req, "genericArticleId")
+  const brandNoParam = qp(req, "brandNo")
+  const q = qp(req, "q")?.trim()
 
-  const params: Record<string, any> = { page, perPage }
-  if (q) params.searchQuery = q
-  if (brandNoRaw) {
-    const list = brandNoRaw.split(",").map((s) => Number(s.trim())).filter(Boolean)
-    if (list.length) params.brandNo = { array: list }
-  }
-  if (genericArticleId) params.genericArticleId = genericArticleId
-  if (carId) { params.linkingTargetId = carId; params.linkingTargetType = linkingTargetType }
+  const page = qpn(req, "page", 1) || 1
+  const perPage = qpn(req, "perPage", 48) || 48
 
-  logDebug("[TecDoc] SEARCH_PARAMS", params)
+  if (!carId) return NextResponse.json({ error: "Missing carId" }, { status: 400 })
 
   try {
-    const data = await tecdocCall("getArticles", params)
-    if (data?.status && data.status >= 300) {
-      logError("[TecDoc][SEARCH_STATUS]", data)
-      return NextResponse.json({ error: data.statusText || "TecDoc error", tecdoc: data }, { status: 502 })
+    const brandNos = (brandNoParam ? String(brandNoParam).split(",") : [])
+      .map(s => Number(s.trim()))
+      .filter(n => Number.isFinite(n))
+
+    // Primair: Assigned articles by linking target (voertuig), optioneel GA + Brands
+    const payload: any = {
+      linkingTargetId: carId,
+      linkingTargetType: "P",
+      basicData: true,
+      info: true,
+      thumbnails: true,
+      page, perPage,
     }
-    return NextResponse.json(data, { headers: { "Cache-Control": "private, max-age=60" } })
+    if (genericArticleId) payload.genericArticleId = genericArticleId
+    if (brandNos.length > 0) payload.brandNo = { array: brandNos }
+
+    let resp = await tecdocCall("getAssignedArticlesByLinkingTarget", payload)
+
+    // fallback varianten (sommige tenants gebruiken v2/3/6 suffixen)
+    if (resp?.status >= 300) {
+      resp = await tecdocCall("getAssignedArticlesByLinkingTarget2", payload)
+    }
+    if (resp?.status >= 300) {
+      resp = await tecdocCall("getAssignedArticlesByLinkingTarget3", payload)
+    }
+
+    let arr = extractArray(resp).map((it: any) => ({
+      articleId: it.articleId ?? it.id,
+      articleName: it.articleName ?? it.name,
+      supplierName: it.supplierName ?? it.brand ?? it.mfrName,
+      genericArticleId: it.genericArticleId ?? it.gaId,
+      genericArticleName: it.genericArticleName ?? it.genericArticleDescription,
+      imageUrl: it.imageUrl ?? it.thumbnailUrl ?? it.thumbUrl ?? it.thumbnails?.[0]?.url,
+    }))
+
+    // Client-side naam/nummer filter, als q is opgegeven
+    if (q) {
+      const t = q.toLowerCase()
+      arr = arr.filter((r) =>
+        String(r.articleName ?? "").toLowerCase().includes(t) ||
+        String(r.supplierName ?? "").toLowerCase().includes(t) ||
+        String(r.articleId ?? "").includes(q)
+      )
+    }
+
+    return NextResponse.json({ data: { array: arr }, status: 200 }, { headers: { "Cache-Control": "private, max-age=120" } })
   } catch (e: any) {
-    logError("[TecDoc][SEARCH_EXCEPTION]", { message: String(e?.message || e) })
-    return NextResponse.json({ error: "Search failed" }, { status: 500 })
+    logError("[SEARCH_ROUTE]", e?.message || e)
+    return NextResponse.json({ error: String(e?.message || e) }, { status: 502 })
   }
 }

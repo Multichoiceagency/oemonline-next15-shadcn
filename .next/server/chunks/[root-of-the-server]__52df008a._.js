@@ -53,69 +53,70 @@ module.exports = mod;
 "[project]/Documents/oemonline-next15-shadcn/lib/env.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// lib/env.ts
 __turbopack_context__.s([
     "ENV",
-    ()=>ENV,
-    "req",
-    ()=>req
+    ()=>ENV
 ]);
-function req(name, fallback) {
-    const v = process.env[name] ?? fallback;
-    if (!v) throw new Error(`Missing env: ${name}`);
+function req(name) {
+    const v = process.env[name];
+    if (!v) throw new Error(`Missing env var: ${name}`);
     return v;
 }
+function boolEnv(name, def = false) {
+    const v = process.env[name];
+    if (v == null) return def;
+    return [
+        "1",
+        "true",
+        "yes",
+        "on"
+    ].includes(String(v).toLowerCase());
+}
 const ENV = {
-    // TecDoc
-    TECDOC_PROVIDER_ID: req("TECDOC_PROVIDER_ID"),
-    TECDOC_API_KEY: req("TECDOC_API_KEY"),
-    TECDOC_LANG_DEFAULT: req("TECDOC_LANG_DEFAULT", "nl"),
-    TECDOC_LANGS: req("TECDOC_LANGS", "nl,fr").split(","),
-    TECDOC_ARTICLE_COUNTRIES: req("TECDOC_ARTICLE_COUNTRIES", "nl,be,lu").split(","),
-    TECDOC_LINKAGE_COUNTRY: req("TECDOC_LINKAGE_COUNTRY", "nl"),
     TECDOC_BASE_JSON: req("TECDOC_BASE_JSON"),
-    TECDOC_PLATE_ENABLED: (process.env.TECDOC_PLATE_ENABLED ?? "true") === "true",
-    TECDOC_PLATE_COUNTRY: req("TECDOC_PLATE_COUNTRY", "nl"),
-    TECDOC_DOWNLOAD_IMAGES: (process.env.TECDOC_DOWNLOAD_IMAGES ?? "true") === "true",
-    TECDOC_DEBUG: (process.env.TECDOC_DEBUG ?? "false") === "true"
+    TECDOC_API_KEY: req("TECDOC_API_KEY"),
+    TECDOC_PROVIDER_ID: Number(req("TECDOC_PROVIDER_ID")),
+    TECDOC_LANG_DEFAULT: process.env.TECDOC_LANG_DEFAULT ?? "nl",
+    TECDOC_LINKAGE_COUNTRY: process.env.TECDOC_LINKAGE_COUNTRY ?? "nl",
+    TECDOC_ARTICLE_COUNTRIES: (process.env.TECDOC_ARTICLE_COUNTRIES ?? "nl").split(",").map((s)=>s.trim()),
+    // ← belangrijke flags
+    TECDOC_PLATE_ENABLED: boolEnv("TECDOC_PLATE_ENABLED", false),
+    TECDOC_PLATE_COUNTRY: process.env.TECDOC_PLATE_COUNTRY ?? "nl"
 };
 }),
 "[project]/Documents/oemonline-next15-shadcn/lib/logger.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */ __turbopack_context__.s([
+// lib/logger.ts
+__turbopack_context__.s([
     "logDebug",
     ()=>logDebug,
     "logError",
     ()=>logError
 ]);
-function logDebug(label, payload) {
+function logDebug(label, obj) {
     try {
-        // Keep logs compact but structured
-        // eslint-disable-next-line no-console
-        console.log(`[TecDoc] ${label}:`, JSON.stringify(payload));
-    } catch  {
-    // ignore
-    }
+        console.debug(label, obj ?? "");
+    } catch  {}
 }
-function logError(label, payload) {
+function logError(label, obj) {
     try {
-        // eslint-disable-next-line no-console
-        console.error(`[TecDoc][ERROR] ${label}:`, JSON.stringify(payload));
-    } catch  {
-    // ignore
-    }
+        console.error(label, obj ?? "");
+    } catch  {}
 }
 }),
 "[project]/Documents/oemonline-next15-shadcn/lib/tecdoc.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */ __turbopack_context__.s([
-    "TecdocHttpError",
-    ()=>TecdocHttpError,
+/* eslint-disable @typescript-eslint/no-explicit-any */ // lib/tecdoc.ts
+__turbopack_context__.s([
     "TecdocOps",
     ()=>TecdocOps,
     "qp",
     ()=>qp,
+    "qpn",
+    ()=>qpn,
     "tecdocCall",
     ()=>tecdocCall
 ]);
@@ -123,124 +124,98 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$ne
 var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Documents/oemonline-next15-shadcn/lib/logger.ts [app-route] (ecmascript)");
 ;
 ;
+function qp(req, key, fallback) {
+    const v = new URL(req.url).searchParams.get(key);
+    return v ?? fallback ?? undefined;
+}
+function qpn(req, key, fallback) {
+    const v = new URL(req.url).searchParams.get(key);
+    if (v == null) return fallback;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+}
 const TecdocOps = {
-    // search
-    searchTerm: "articleSearchByTerm",
-    // VRM / VIN / Motor
-    byPlate: "getVehiclesByKeyNumberPlates",
-    byVin: "getVehiclesByVIN",
-    byMotorId: "getVehicleIdsByMotor2",
-    // Vehicle reference (names differ per tenant; swap to your exact ops if needed)
+    // voertuigen
     manufacturers: "getManufacturers",
-    models: "getModelSeries",
-    types: "getVehicleIdsByCriteria",
-    // Catalog
-    genericArticles: "getGenericArticles",
-    // Articles
-    articleById: "getArticleDirectSearchById",
-    articleImages: "getArticleImages"
+    modelSeries: "getModelSeries",
+    vehicleIdsByCriteria: "getVehicleIdsByCriteria",
+    vehiclesByPlate: "getVehiclesByKeyNumberPlates",
+    // artikelen / merken (optioneel elders gebruikt)
+    articles: "getArticles",
+    brands: "getBrands",
+    amBrands: "getAmBrands",
+    articleByIds6: "getArticleDirectSearchByIds6",
+    articleAssignedByIds6: "getAssignedArticlesByIds6",
+    // aliassen
+    articleById: "getArticles",
+    articleImages: "getArticles"
 };
-async function tecdocCall(resource, params = {}, init) {
-    const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 15000);
-    const body = {
-        provider: Number(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_PROVIDER_ID),
-        locale: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LANG_DEFAULT,
-        country: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY,
-        resource,
-        // "defensive" params for common variations
-        lang: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LANG_DEFAULT,
-        countryCode: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY,
-        articleCountry: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_ARTICLE_COUNTRIES,
+/** Zorg dat page/perPage altijd integers zijn (Pegasus is strikt). */ function normalizePaging(params) {
+    const p = {
         ...params
     };
-    if (__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_DEBUG) (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("REQUEST", {
-        url: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_BASE_JSON,
-        body
+    if (typeof p.page === "object" && p.page) {
+        const n = Number(p.page.number ?? p.page.page ?? 1);
+        const s = Number(p.page.size ?? p.page.perPage ?? p.perPage ?? 25);
+        p.page = Number.isFinite(n) ? n : 1;
+        p.perPage = Number.isFinite(s) ? s : 25;
+    }
+    if (!Number.isFinite(p.page)) p.page = 1;
+    if (!Number.isFinite(p.perPage)) delete p.perPage;
+    return p;
+}
+async function tecdocCall(resource, params) {
+    const base = __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_BASE_JSON;
+    const provider = __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_PROVIDER_ID;
+    const lang = params.lang ?? __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LANG_DEFAULT;
+    const country = params.country ?? __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY;
+    let bodyParams = {
+        provider,
+        lang,
+        country,
+        countryCode: country,
+        articleCountry: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_ARTICLE_COUNTRIES[0],
+        ...params
+    };
+    bodyParams = normalizePaging(bodyParams);
+    const payload = {
+        [resource]: bodyParams
+    };
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] REQUEST", {
+        resource,
+        url: base,
+        body: payload
     });
-    try {
-        const res = await fetch(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_BASE_JSON, {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                "X-Api-Key": __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-            ...init
-        });
-        clearTimeout(timeout);
-        const text = await res.text();
-        const json = safeJson(text);
-        if (!res.ok) {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("RESPONSE", {
-                status: res.status,
-                statusText: res.statusText,
-                body: text
-            });
-            throw new TecdocHttpError(resource, res.status, res.statusText, text);
-        }
-        if (__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_DEBUG) (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("RESPONSE", {
-            status: res.status,
-            jsonSummary: summarize(json)
-        });
-        return json;
-    } catch (err) {
-        if (err?.name === "AbortError") {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("TIMEOUT", {
-                resource
-            });
-            throw new TecdocHttpError(resource, 504, "Timeout", "Request timed out");
-        }
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("FETCH_ERROR", {
-            resource,
-            message: String(err?.message || err)
-        });
-        throw err;
+    const res = await fetch(base, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Api-Key": __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY
+        },
+        body: JSON.stringify(payload),
+        keepalive: true
+    });
+    const text = await res.text().catch(()=>"");
+    if (!res.ok) {
+        throw new Error(`TecDoc ${resource} ${res.status}: ${text}`);
     }
-}
-class TecdocHttpError extends Error {
-    resource;
-    status;
-    statusText;
-    rawBody;
-    constructor(resource, status, statusText, rawBody){
-        super(`TecDoc ${resource} ${status}: ${statusText}`), this.resource = resource, this.status = status, this.statusText = statusText, this.rawBody = rawBody;
-    }
-}
-function safeJson(text) {
+    let json = {};
     try {
-        return JSON.parse(text);
+        json = text ? JSON.parse(text) : {};
     } catch  {
-        return {
-            raw: text
-        };
+        throw new Error(`TecDoc ${resource}: invalid JSON response`);
     }
-}
-function summarize(obj) {
-    try {
-        if (!obj) return obj;
-        const status = obj.status ?? obj.Status ?? undefined;
-        const hasData = obj.data || obj.Data || obj.result || obj.Result;
-        const len = Array.isArray(hasData?.array) ? hasData.array.length : undefined;
-        return {
-            status,
-            hasData: !!hasData,
-            len
-        };
-    } catch  {
-        return undefined;
-    }
-}
-function qp(req, key, dflt) {
-    const url = new URL(req.url);
-    return (url.searchParams.get(key) ?? dflt)?.trim();
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] RESPONSE", json?.status ? json : {
+        resource,
+        status: 200
+    });
+    return json;
 }
 }),
 "[project]/Documents/oemonline-next15-shadcn/app/api/categories/route.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-// app/api/categories/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */ // app/api/categories/route.ts
 __turbopack_context__.s([
     "GET",
     ()=>GET,
@@ -249,17 +224,87 @@ __turbopack_context__.s([
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$2_react$2d$dom$40$19$2e$1$2e$0_react$40$19$2e$1$2e$0_$5f$react$40$19$2e$1$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Documents/oemonline-next15-shadcn/node_modules/.pnpm/next@15.5.2_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/server.js [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Documents/oemonline-next15-shadcn/lib/tecdoc.ts [app-route] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Documents/oemonline-next15-shadcn/lib/logger.ts [app-route] (ecmascript)");
+;
 ;
 ;
 const dynamic = "force-dynamic";
+function pickCarIdFromQuery(req) {
+    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["qpn"])(req, "carId") ?? (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["qpn"])(req, "typeId") ?? (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["qpn"])(req, "kType");
+}
 async function GET(req) {
-    const op = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["qp"])(req, "operation", __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["TecdocOps"].genericArticles) ?? __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["TecdocOps"].genericArticles;
-    const data = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["tecdocCall"])(op, {});
-    return __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$2_react$2d$dom$40$19$2e$1$2e$0_react$40$19$2e$1$2e$0_$5f$react$40$19$2e$1$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json(data, {
-        headers: {
-            "Cache-Control": "public, max-age=86400"
-        }
+    const carId = pickCarIdFromQuery(req);
+    if (!carId) return __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$2_react$2d$dom$40$19$2e$1$2e$0_react$40$19$2e$1$2e$0_$5f$react$40$19$2e$1$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+        error: "Missing carId"
+    }, {
+        status: 400
     });
+    const q = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["qp"])(req, "q") || undefined;
+    const brandNoCsv = (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["qp"])(req, "brandNo");
+    const brandNos = brandNoCsv?.split(",").map((s)=>Number(s.trim())).filter(Boolean);
+    const params = {
+        linkingTargetId: carId,
+        linkingTargetType: "P",
+        page: 1,
+        perPage: 300
+    };
+    if (q) params.searchQuery = q;
+    if (brandNos?.length) params.brandNo = {
+        array: brandNos
+    };
+    try {
+        const resp = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$tecdoc$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["tecdocCall"])("getArticles", params);
+        if (resp?.status && resp.status >= 300) {
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("[TecDoc][CATEGORIES_STATUS]", resp);
+            return __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$2_react$2d$dom$40$19$2e$1$2e$0_react$40$19$2e$1$2e$0_$5f$react$40$19$2e$1$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+                error: resp.statusText || "TecDoc error",
+                tecdoc: resp
+            }, {
+                status: 502
+            });
+        }
+        const arr = Array.isArray(resp?.data?.array) ? resp.data.array : [];
+        // Groepeer per Generic Article
+        const map = new Map();
+        for (const it of arr){
+            const id = Number(it?.genericArticleId ?? it?.genericArticleNumber);
+            if (!Number.isFinite(id)) continue;
+            const name = String(it?.genericArticleName ?? it?.genericArticleDescription ?? "Onbekend");
+            const prev = map.get(id);
+            if (prev) prev.count++;
+            else map.set(id, {
+                genericArticleId: id,
+                name,
+                count: 1
+            });
+        }
+        const out = [
+            ...map.values()
+        ].sort((a, b)=>b.count - a.count || a.name.localeCompare(b.name));
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] CATEGORIES_OK", {
+            carId,
+            size: out.length
+        });
+        return __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$2_react$2d$dom$40$19$2e$1$2e$0_react$40$19$2e$1$2e$0_$5f$react$40$19$2e$1$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            data: {
+                array: out
+            },
+            status: 200
+        }, {
+            headers: {
+                "Cache-Control": "private, max-age=120"
+            }
+        });
+    } catch (e) {
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("[TecDoc][CATEGORIES_EXCEPTION]", {
+            message: String(e?.message || e)
+        });
+        return __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$node_modules$2f2e$pnpm$2f$next$40$15$2e$5$2e$2_react$2d$dom$40$19$2e$1$2e$0_react$40$19$2e$1$2e$0_$5f$react$40$19$2e$1$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            error: "Kon categorieën niet bepalen"
+        }, {
+            status: 502
+        });
+    }
 }
 }),
 ];

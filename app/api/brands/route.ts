@@ -1,14 +1,18 @@
-// app/api/brands/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 import { tecdocCall } from "@/lib/tecdoc"
-import { ENV } from "@/lib/env"
+import { extractArray } from "@/lib/normalize"
+import { logError } from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 
 export async function GET() {
-  const resp = await tecdocCall("getAmBrands", {
-    articleCountry: ENV.TECDOC_ARTICLE_COUNTRIES[0],
-    lang: ENV.TECDOC_LANG_DEFAULT,
-  })
-  return NextResponse.json(resp, { headers: { "Cache-Control": "private, max-age=3600" } })
+  try {
+    const r = await tecdocCall("getAmBrands", { page: 1, perPage: 1000 })
+    const arr = extractArray(r)
+    return NextResponse.json({ data: { array: arr }, status: 200 }, { headers: { "Cache-Control": "private, max-age=600" } })
+  } catch (e: any) {
+    logError("[BRANDS_ROUTE]", e?.message || e)
+    return NextResponse.json({ error: String(e?.message || e) }, { status: 502 })
+  }
 }

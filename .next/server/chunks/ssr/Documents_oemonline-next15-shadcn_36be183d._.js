@@ -329,11 +329,12 @@ function TableCaption({ className, ...props }) {
     "extractArray",
     ()=>extractArray,
     "first",
-    ()=>first
+    ()=>first,
+    "toOptions",
+    ()=>toOptions
 ]);
 function extractArray(payload) {
     if (!payload) return [];
-    // common path
     if (Array.isArray(payload?.data?.array)) return payload.data.array;
     const d = payload.data ?? payload.result ?? payload;
     if (Array.isArray(d?.array)) return d.array;
@@ -349,6 +350,36 @@ function extractArray(payload) {
 function first(payload) {
     const arr = extractArray(payload);
     return arr[0];
+}
+function toOptions(kind, arr) {
+    return (arr ?? []).map((it)=>{
+        if (kind === "manufacturer") {
+            const id = it.manuId ?? it.manuNo ?? it.id;
+            const name = it.manuName ?? it.name ?? it.description;
+            return {
+                id: Number(id),
+                name: String(name ?? id),
+                raw: it
+            };
+        }
+        if (kind === "model") {
+            const id = it.modelSeriesId ?? it.modId ?? it.id;
+            const name = it.modelSeriesName ?? it.modelname ?? it.name;
+            return {
+                id: Number(id),
+                name: String(name ?? id),
+                raw: it
+            };
+        }
+        // type
+        const id = it.typeId ?? it.carId ?? it.kType ?? it.vehicleId ?? it.id;
+        const name = it.typeName ?? it.carName ?? it.vehicleName ?? it.name;
+        return {
+            id: Number(id),
+            name: String(name ?? id),
+            raw: it
+        };
+    }).filter((o)=>Number.isFinite(o.id));
 }
 }),
 "[project]/Documents/oemonline-next15-shadcn/app/dashboard/catalog/articles/state/page.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {

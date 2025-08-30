@@ -402,12 +402,13 @@ if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelper
     "extractArray",
     ()=>extractArray,
     "first",
-    ()=>first
+    ()=>first,
+    "toOptions",
+    ()=>toOptions
 ]);
 function extractArray(payload) {
     var _payload_data;
     if (!payload) return [];
-    // common path
     if (Array.isArray(payload === null || payload === void 0 ? void 0 : (_payload_data = payload.data) === null || _payload_data === void 0 ? void 0 : _payload_data.array)) return payload.data.array;
     var _payload_data1, _ref;
     const d = (_ref = (_payload_data1 = payload.data) !== null && _payload_data1 !== void 0 ? _payload_data1 : payload.result) !== null && _ref !== void 0 ? _ref : payload;
@@ -424,6 +425,42 @@ function extractArray(payload) {
 function first(payload) {
     const arr = extractArray(payload);
     return arr[0];
+}
+function toOptions(kind, arr) {
+    return (arr !== null && arr !== void 0 ? arr : []).map((it)=>{
+        if (kind === "manufacturer") {
+            var _it_manuId, _ref;
+            const id = (_ref = (_it_manuId = it.manuId) !== null && _it_manuId !== void 0 ? _it_manuId : it.manuNo) !== null && _ref !== void 0 ? _ref : it.id;
+            var _it_manuName, _ref1;
+            const name = (_ref1 = (_it_manuName = it.manuName) !== null && _it_manuName !== void 0 ? _it_manuName : it.name) !== null && _ref1 !== void 0 ? _ref1 : it.description;
+            return {
+                id: Number(id),
+                name: String(name !== null && name !== void 0 ? name : id),
+                raw: it
+            };
+        }
+        if (kind === "model") {
+            var _it_modelSeriesId, _ref2;
+            const id = (_ref2 = (_it_modelSeriesId = it.modelSeriesId) !== null && _it_modelSeriesId !== void 0 ? _it_modelSeriesId : it.modId) !== null && _ref2 !== void 0 ? _ref2 : it.id;
+            var _it_modelSeriesName, _ref3;
+            const name = (_ref3 = (_it_modelSeriesName = it.modelSeriesName) !== null && _it_modelSeriesName !== void 0 ? _it_modelSeriesName : it.modelname) !== null && _ref3 !== void 0 ? _ref3 : it.name;
+            return {
+                id: Number(id),
+                name: String(name !== null && name !== void 0 ? name : id),
+                raw: it
+            };
+        }
+        var _it_typeId, _ref4, _ref5, _ref6;
+        // type
+        const id = (_ref6 = (_ref5 = (_ref4 = (_it_typeId = it.typeId) !== null && _it_typeId !== void 0 ? _it_typeId : it.carId) !== null && _ref4 !== void 0 ? _ref4 : it.kType) !== null && _ref5 !== void 0 ? _ref5 : it.vehicleId) !== null && _ref6 !== void 0 ? _ref6 : it.id;
+        var _it_typeName, _ref7, _ref8;
+        const name = (_ref8 = (_ref7 = (_it_typeName = it.typeName) !== null && _it_typeName !== void 0 ? _it_typeName : it.carName) !== null && _ref7 !== void 0 ? _ref7 : it.vehicleName) !== null && _ref8 !== void 0 ? _ref8 : it.name;
+        return {
+            id: Number(id),
+            name: String(name !== null && name !== void 0 ? name : id),
+            raw: it
+        };
+    }).filter((o)=>Number.isFinite(o.id));
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);

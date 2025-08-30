@@ -53,48 +53,56 @@ module.exports = mod;
 "[project]/Documents/oemonline-next15-shadcn/lib/env.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// lib/env.ts
 __turbopack_context__.s([
     "ENV",
-    ()=>ENV,
-    "req",
-    ()=>req
+    ()=>ENV
 ]);
-function req(name, fallback) {
-    const v = process.env[name] ?? fallback;
-    if (!v) throw new Error(`Missing env: ${name}`);
+function req(name) {
+    const v = process.env[name];
+    if (!v) throw new Error(`Missing env var: ${name}`);
     return v;
 }
+function boolEnv(name, def = false) {
+    const v = process.env[name];
+    if (v == null) return def;
+    return [
+        "1",
+        "true",
+        "yes",
+        "on"
+    ].includes(String(v).toLowerCase());
+}
 const ENV = {
-    TECDOC_PROVIDER_ID: req("TECDOC_PROVIDER_ID"),
-    TECDOC_API_KEY: req("TECDOC_API_KEY"),
-    TECDOC_LANG_DEFAULT: req("TECDOC_LANG_DEFAULT", "nl"),
-    TECDOC_LANGS: req("TECDOC_LANGS", "nl,fr").split(","),
-    TECDOC_ARTICLE_COUNTRIES: req("TECDOC_ARTICLE_COUNTRIES", "nl,be,lu").split(","),
-    TECDOC_LINKAGE_COUNTRY: req("TECDOC_LINKAGE_COUNTRY", "nl"),
     TECDOC_BASE_JSON: req("TECDOC_BASE_JSON"),
-    TECDOC_PLATE_ENABLED: (process.env.TECDOC_PLATE_ENABLED ?? "true") === "true",
-    TECDOC_PLATE_COUNTRY: req("TECDOC_PLATE_COUNTRY", "nl"),
-    TECDOC_DOWNLOAD_IMAGES: (process.env.TECDOC_DOWNLOAD_IMAGES ?? "true") === "true",
-    TECDOC_DEBUG: (process.env.TECDOC_DEBUG ?? "true") === "true"
+    TECDOC_API_KEY: req("TECDOC_API_KEY"),
+    TECDOC_PROVIDER_ID: Number(req("TECDOC_PROVIDER_ID")),
+    TECDOC_LANG_DEFAULT: process.env.TECDOC_LANG_DEFAULT ?? "nl",
+    TECDOC_LINKAGE_COUNTRY: process.env.TECDOC_LINKAGE_COUNTRY ?? "nl",
+    TECDOC_ARTICLE_COUNTRIES: (process.env.TECDOC_ARTICLE_COUNTRIES ?? "nl").split(",").map((s)=>s.trim()),
+    // ← belangrijke flags
+    TECDOC_PLATE_ENABLED: boolEnv("TECDOC_PLATE_ENABLED", false),
+    TECDOC_PLATE_COUNTRY: process.env.TECDOC_PLATE_COUNTRY ?? "nl"
 };
 }),
 "[project]/Documents/oemonline-next15-shadcn/lib/logger.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+// lib/logger.ts
 __turbopack_context__.s([
     "logDebug",
     ()=>logDebug,
     "logError",
     ()=>logError
 ]);
-function logDebug(label, payload) {
+function logDebug(label, obj) {
     try {
-        console.log(`[TecDoc] ${label}:`, JSON.stringify(payload));
+        console.debug(label, obj ?? "");
     } catch  {}
 }
-function logError(label, payload) {
+function logError(label, obj) {
     try {
-        console.error(`[TecDoc][ERROR] ${label}:`, JSON.stringify(payload));
+        console.error(label, obj ?? "");
     } catch  {}
 }
 }),
@@ -103,6 +111,8 @@ function logError(label, payload) {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */ // lib/tecdoc.ts
 __turbopack_context__.s([
+    "TecdocOps",
+    ()=>TecdocOps,
     "qp",
     ()=>qp,
     "qpn",
@@ -124,7 +134,23 @@ function qpn(req, key, fallback) {
     const n = Number(v);
     return Number.isFinite(n) ? n : fallback;
 }
-/** Interne helper om paging robuust te maken. */ function normalizePaging(params) {
+const TecdocOps = {
+    // voertuigen
+    manufacturers: "getManufacturers",
+    modelSeries: "getModelSeries",
+    vehicleIdsByCriteria: "getVehicleIdsByCriteria",
+    vehiclesByPlate: "getVehiclesByKeyNumberPlates",
+    // artikelen / merken (optioneel elders gebruikt)
+    articles: "getArticles",
+    brands: "getBrands",
+    amBrands: "getAmBrands",
+    articleByIds6: "getArticleDirectSearchByIds6",
+    articleAssignedByIds6: "getAssignedArticlesByIds6",
+    // aliassen
+    articleById: "getArticles",
+    articleImages: "getArticles"
+};
+/** Zorg dat page/perPage altijd integers zijn (Pegasus is strikt). */ function normalizePaging(params) {
     const p = {
         ...params
     };
@@ -155,6 +181,11 @@ async function tecdocCall(resource, params) {
     const payload = {
         [resource]: bodyParams
     };
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] REQUEST", {
+        resource,
+        url: base,
+        body: payload
+    });
     const res = await fetch(base, {
         method: "POST",
         headers: {
@@ -165,11 +196,6 @@ async function tecdocCall(resource, params) {
         keepalive: true
     });
     const text = await res.text().catch(()=>"");
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] REQUEST", {
-        resource,
-        url: base,
-        body: payload
-    });
     if (!res.ok) {
         throw new Error(`TecDoc ${resource} ${res.status}: ${text}`);
     }
@@ -179,15 +205,10 @@ async function tecdocCall(resource, params) {
     } catch  {
         throw new Error(`TecDoc ${resource}: invalid JSON response`);
     }
-    if (json?.status && json.status >= 300) {
-        // TecDoc kan fout in body signalleren met 200 OK
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] RESPONSE", json);
-    } else {
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] RESPONSE", {
-            resource,
-            status: json?.status ?? 200
-        });
-    }
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("[TecDoc] RESPONSE", json?.status ? json : {
+        resource,
+        status: 200
+    });
     return json;
 }
 }),

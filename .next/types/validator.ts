@@ -47,6 +47,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
+// Validate ../../app/dashboard/admin/products/page.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/admin/products/page.js")
+  handler satisfies AppPageConfig<"/dashboard/admin/products">
+}
+
 // Validate ../../app/dashboard/catalog/articles/assigned/page.tsx
 {
   const handler = {} as typeof import("../../app/dashboard/catalog/articles/assigned/page.js")
@@ -143,6 +149,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies AppPageConfig<"/">
 }
 
+// Validate ../../app/api/admin/products/route.ts
+{
+  const handler = {} as typeof import("../../app/api/admin/products/route.js")
+  handler satisfies RouteHandlerConfig<"/api/admin/products">
+}
+
 // Validate ../../app/api/admin/stats/route.ts
 {
   const handler = {} as typeof import("../../app/api/admin/stats/route.js")
@@ -161,6 +173,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   handler satisfies RouteHandlerConfig<"/api/assigned-articles-by-ids">
 }
 
+// Validate ../../app/api/brands/by-vehicle/route.ts
+{
+  const handler = {} as typeof import("../../app/api/brands/by-vehicle/route.js")
+  handler satisfies RouteHandlerConfig<"/api/brands/by-vehicle">
+}
+
 // Validate ../../app/api/brands/route.ts
 {
   const handler = {} as typeof import("../../app/api/brands/route.js")
@@ -171,6 +189,18 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   const handler = {} as typeof import("../../app/api/categories/route.js")
   handler satisfies RouteHandlerConfig<"/api/categories">
+}
+
+// Validate ../../app/api/flags/route.ts
+{
+  const handler = {} as typeof import("../../app/api/flags/route.js")
+  handler satisfies RouteHandlerConfig<"/api/flags">
+}
+
+// Validate ../../app/api/logo/route.ts
+{
+  const handler = {} as typeof import("../../app/api/logo/route.js")
+  handler satisfies RouteHandlerConfig<"/api/logo">
 }
 
 // Validate ../../app/api/motor/route.ts
@@ -236,6 +266,12 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 
 
 
+
+// Validate ../../app/dashboard/layout.tsx
+{
+  const handler = {} as typeof import("../../app/dashboard/layout.js")
+  handler satisfies LayoutConfig<"/dashboard">
+}
 
 // Validate ../../app/layout.tsx
 {

@@ -18,13 +18,13 @@ export default function Page() {
 
   // voertuig-keuze
   const [plate, setPlate] = React.useState("")
-  const [carId, setCarId] = React.useState<string>("")      // kType
+  const [carId, setCarId] = React.useState<string>("") // kType
   const [manus, setManus] = React.useState<any[]>([])
   const [models, setModels] = React.useState<any[]>([])
   const [types, setTypes] = React.useState<any[]>([])
   const [manuId, setManuId] = React.useState<string>("")
   const [modelSeriesId, setModelSeriesId] = React.useState<string>("")
-  const [typeId, setTypeId] = React.useState<string>("")    // == carId
+  const [typeId, setTypeId] = React.useState<string>("") // == carId
 
   // subcategorieën en artikelen
   const [subcats, setSubcats] = React.useState<Subcat[]>([])
@@ -37,43 +37,59 @@ export default function Page() {
   const [loading, setLoading] = React.useState(false)
   const [subLoading, setSubLoading] = React.useState(false)
 
-  // motor specificaties
+  // motor specificaties (compact blok onder selectors)
   const [specs, setSpecs] = React.useState<any | undefined>()
   const [specLoading, setSpecLoading] = React.useState(false)
 
+  const [loadingModels, setLoadingModels] = React.useState(false)
+  const [loadingTypes, setLoadingTypes] = React.useState(false)
+
+  // init: AM brands + manufacturers
   React.useEffect(() => {
     ;(async () => {
       try {
-        const b = await (await fetch("/api/brands")).json()
-        setAmBrands(extractArray(b)) // [{brandId, brandName}]
-      } catch {}
-      try {
-        const r = await (await fetch("/api/vehicles?mode=manufacturers")).json()
-        setManus(extractArray(r)) // [{id,name}]
+        const [bRes, mRes] = await Promise.all([
+          fetch("/api/brands"),
+          fetch("/api/vehicles?mode=manufacturers"),
+        ])
+        const [bJson, mJson] = await Promise.all([bRes.json(), mRes.json()])
+        setAmBrands(extractArray(bJson))
+        setManus(extractArray(mJson))
       } catch {}
     })()
   }, [])
 
-  // helpers
   async function fetchModels(mid: string) {
-    const r = await fetch(`/api/vehicles?mode=models&manufacturerId=${mid}`)
-    const j = await r.json()
-    setModels(extractArray(j)) // [{id,name}]
-  }
-  async function fetchTypes(msid: string) {
-    const r = await fetch(`/api/vehicles?mode=types&modelSeriesId=${msid}`)
-    const j = await r.json()
-    setTypes(extractArray(j)) // [{id,name}]
+    setLoadingModels(true)
+    try {
+      const r = await fetch(`/api/vehicles?mode=models&manufacturerId=${mid}`)
+      const j = await r.json()
+      if (!r.ok) throw new Error(j?.error || "Modellen laden mislukt")
+      setModels(extractArray(j))
+    } catch (e: any) {
+      setErr(e.message)
+      setModels([])
+    } finally {
+      setLoadingModels(false)
+    }
   }
 
-  async function loadSpecs(kType: string) {
-    setSpecs(undefined); setSpecLoading(true)
+  // >>> FIX: manufacturerId meesturen bij types
+  async function fetchTypes(msid: string) {
+    setLoadingTypes(true)
     try {
-      const r = await fetch(`/api/vehicle-details?carId=${kType}&country=nl&lang=nl`)
+      const qs = new URLSearchParams({ modelSeriesId: String(msid) })
+      if (manuId) qs.set("manufacturerId", String(manuId))
+      const r = await fetch(`/api/vehicles?mode=types&${qs.toString()}`)
       const j = await r.json()
-      const it = first<any>(j) || j?.normalized || j?.data || j
-      setSpecs(it)
-    } finally { setSpecLoading(false) }
+      if (!r.ok) throw new Error(j?.error || "Motor/Type laden mislukt")
+      setTypes(extractArray(j))
+    } catch (e: any) {
+      setErr(e.message)
+      setTypes([])
+    } finally {
+      setLoadingTypes(false)
+    }
   }
 
   async function loadSubcats(kType?: string) {
@@ -86,7 +102,19 @@ export default function Page() {
       const r = await fetch(`/api/subcategories?${p.toString()}`)
       const j = await r.json()
       setSubcats(extractArray(j) as any)
-    } finally { setSubLoading(false) }
+    } finally {
+      setSubLoading(false)
+    }
+  }
+
+  async function loadSpecs(kType: string) {
+    setSpecs(undefined); setSpecLoading(true)
+    try {
+      const r = await fetch(`/api/vehicle-details?carId=${kType}&country=nl&lang=nl`)
+      const j = await r.json()
+      const it = first<any>(j) || j?.normalized || j?.data || j
+      setSpecs(it)
+    } finally { setSpecLoading(false) }
   }
 
   // cascade — handmatige selectie
@@ -108,7 +136,7 @@ export default function Page() {
     await Promise.all([loadSpecs(id), loadSubcats(id)])
   }
 
-  // kenteken → sync selects + subcats + specs
+  // kenteken → sync alle selects + subcats + specs
   async function resolvePlate() {
     if (!plate) return
     setErr(undefined)
@@ -116,9 +144,10 @@ export default function Page() {
       const r = await fetch(`/api/plates?plate=${encodeURIComponent(plate)}&country=nl`)
       const j = await r.json()
       if (!r.ok) throw new Error(j?.error || j?.statusText || "Kenteken lookup mislukt")
-      const picked = first<any>(j)
+      const picked = first<any>(j) // { carId, ... }
       if (!picked?.carId) throw new Error("Geen voertuig gevonden voor dit kenteken")
 
+      // details ophalen om manu/model/type te syncen
       const det = await fetch(`/api/vehicle-details?carId=${picked.carId}&country=nl&lang=nl`)
       const dj = await det.json()
       if (!det.ok) throw new Error(dj?.error || "Voertuigdetails mislukt")
@@ -128,19 +157,14 @@ export default function Page() {
       if (n.modelSeriesId) { setModelSeriesId(String(n.modelSeriesId)); await fetchTypes(String(n.modelSeriesId)) }
 
       const kType = String(n.typeId ?? picked.carId)
-      setTypeId(kType); setCarId(kType); setGaId(undefined)
+      setTypeId(kType); setCarId(kType)
       await Promise.all([loadSpecs(kType), loadSubcats(kType)])
     } catch (e: any) {
       setErr(e.message)
     }
   }
 
-  // herlaad subcats wanneer carId/brandNo wijzigt
-  React.useEffect(() => {
-    if (carId) { void loadSubcats(carId) }
-  }, [carId, brandNo])
-
-  // zoeken (carId verplicht)
+  // zoeken binnen gekozen GA of via vrije tekst (carId verplicht)
   async function run(ga?: number) {
     if (!carId) { setErr("Kies eerst merk → model → motor/type of koppel via kenteken."); return }
     const useGa = ga ?? gaId
@@ -151,6 +175,7 @@ export default function Page() {
       if (q) p.set("q", q)
       if (brandNo) p.set("brandNo", brandNo)
       if (useGa) p.set("genericArticleId", String(useGa))
+
       const r = await fetch(`/api/search?${p.toString()}`)
       const j = await r.json()
       if (!r.ok) throw new Error(j?.error || "Zoekopdracht mislukt")
@@ -166,12 +191,14 @@ export default function Page() {
       <Card className="rounded-2xl">
         <CardHeader><CardTitle>Voertuig kiezen</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
+          {/* Kenteken */}
           <div className="flex items-center gap-2">
             <label className="w-28 text-sm text-muted-foreground">Kenteken</label>
-            <Input value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="bv. 12-ABC3" />
+            <Input value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="bv. G-428-FK" />
             <Button variant="secondary" onClick={resolvePlate}>Koppel voertuig</Button>
           </div>
 
+          {/* Merk → Model → Motor(type) */}
           <div className="grid gap-3 md:grid-cols-3">
             <div className="flex items-center gap-2">
               <label className="w-28 text-sm text-muted-foreground">Automerk</label>
@@ -184,8 +211,8 @@ export default function Page() {
             </div>
             <div className="flex items-center gap-2">
               <label className="w-28 text-sm text-muted-foreground">Model</label>
-              <Select value={modelSeriesId} onValueChange={onPickModel} disabled={!manuId}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Selecteer model" /></SelectTrigger>
+              <Select value={modelSeriesId} onValueChange={onPickModel} disabled={!manuId || loadingModels}>
+                <SelectTrigger className="h-9"><SelectValue placeholder={loadingModels ? "Laden…" : (manuId ? "Selecteer model" : "Kies automerk eerst")} /></SelectTrigger>
                 <SelectContent className="max-h-80">
                   {models.map((m: any) => (<SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>))}
                 </SelectContent>
@@ -193,8 +220,8 @@ export default function Page() {
             </div>
             <div className="flex items-center gap-2">
               <label className="w-28 text-sm text-muted-foreground">Motor / Type</label>
-              <Select value={typeId} onValueChange={onPickType} disabled={!modelSeriesId}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Selecteer motor/type" /></SelectTrigger>
+              <Select value={typeId} onValueChange={onPickType} disabled={!modelSeriesId || loadingTypes}>
+                <SelectTrigger className="h-9"><SelectValue placeholder={loadingTypes ? "Laden…" : (modelSeriesId ? "Selecteer motor/type" : "Kies model eerst")} /></SelectTrigger>
                 <SelectContent className="max-h-80">
                   {types.map((t: any) => (<SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>))}
                 </SelectContent>
@@ -202,6 +229,7 @@ export default function Page() {
             </div>
           </div>
 
+          {/* Compact specs */}
           <div className="text-xs text-muted-foreground">
             {specLoading ? "Specificaties laden…" : (specs?.typeName ? `Geselecteerd: ${specs.typeName}` : "Nog geen motor/type gekozen")}
           </div>

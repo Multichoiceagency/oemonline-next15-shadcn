@@ -1,79 +1,154 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/tecdoc.ts
 import { ENV } from "./env"
-import { logDebug } from "./logger"
+import { logDebug, logError } from "./logger"
 
-export function qp(req: Request, key: string, fallback?: string): string | undefined {
-  const v = new URL(req.url).searchParams.get(key)
-  return (v ?? fallback) ?? undefined
+/** Veelgebruikte TecDoc resources als vaste mapping (type-safe). */
+export const TecdocOps = {
+  // Vehicle tree
+  manufacturers: "getManufacturers",
+  modelSeries: "getModelSeries",
+  types: "getTypes",
+
+  // Vehicle details / linkages
+  vehiclesByIds2: "getVehiclesByIds2",
+  linkageTargets: "getLinkageTargets",
+  linkageTargetsByCarIds: "getLinkageTargetsByCarIds",
+
+  // Plate (let op: sommige tenants vereisen extra keySystemNumber)
+  vehiclesByPlate: "getVehiclesByKeyNumberPlates",
+
+  // Brands
+  amBrands: "getAmBrands",
+
+  // Categories (Generic Articles)
+  genericArticles: "getGenericArticles",
+  genericArticlesByLinkingTarget: "getGenericArticlesByLinkingTarget",
+
+  // Article IDs / staat
+  articleIdsWithState: "getArticleIdsWithState",
+
+  // Assigned articles (producten) voor voertuig
+  assignedByLinkingTarget: "getAssignedArticlesByLinkingTarget",
+  assignedByLinkingTarget2: "getAssignedArticlesByLinkingTarget2",
+  assignedByLinkingTarget3: "getAssignedArticlesByLinkingTarget3",
+  assignedByIds6: "getAssignedArticlesByIds6",
+
+  // Article details / media (varianten verschillen per tenant)
+  articleSearchByTerm: "articleSearchByTerm",
+  articleById: "getArticles",
+  articleMediaByIds: "getArticleMediaByIds",
+  articleMediaByIds6: "getArticleMediaByIds6",
+} as const
+
+export type TecdocOp = typeof TecdocOps[keyof typeof TecdocOps]
+export type TecdocResource = string
+
+/** Query helper: string */
+export function qp(req: Request, key: string, def?: string) {
+  const url = new URL(req.url)
+  const val = url.searchParams.get(key)
+  return val == null ? def : val
 }
-export function qpn(req: Request, key: string, fallback?: number): number | undefined {
-  const v = new URL(req.url).searchParams.get(key)
-  if (v == null) return fallback
+
+/** Query helper: number */
+export function qpn(req: Request, key: string, def?: number) {
+  const v = qp(req, key)
+  if (v == null) return def
   const n = Number(v)
-  return Number.isFinite(n) ? n : fallback
+  return Number.isFinite(n) ? n : def
 }
 
-/** Interne helper om paging robuust te maken. */
-function normalizePaging(params: Record<string, any>) {
-  const p: any = { ...params }
-  if (typeof p.page === "object" && p.page) {
-    const n = Number(p.page.number ?? p.page.page ?? 1)
-    const s = Number(p.page.size ?? p.page.perPage ?? p.perPage ?? 25)
-    p.page = Number.isFinite(n) ? n : 1
-    p.perPage = Number.isFinite(s) ? s : 25
-  }
-  if (!Number.isFinite(p.page)) p.page = 1
-  if (!Number.isFinite(p.perPage)) delete p.perPage
-  return p
+/** Sommige endpoints verwachten { array: [...] } i.p.v. een kale array. */
+export function toArrayParam<T = any>(a?: T[] | null) {
+  if (!a || a.length === 0) return undefined
+  return { array: a }
 }
 
-export async function tecdocCall<T=any>(resource: string, params: Record<string, any>) {
-  const base = ENV.TECDOC_BASE_JSON
-  const provider = ENV.TECDOC_PROVIDER_ID
-  const lang = params.lang ?? ENV.TECDOC_LANG_DEFAULT
-  const country = params.country ?? ENV.TECDOC_LINKAGE_COUNTRY
+/** Basis JSON endpoint */
+export const TECDOC_ENDPOINT =
+  ENV.TECDOC_BASE_JSON ||
+  "https://webservice.tecalliance.services/pegasus-3-0/services/TecdocToCatDLB.jsonEndpoint"
 
-  let bodyParams: Record<string, any> = {
-    provider,
-    lang,
-    country,
-    countryCode: country,     // sommige methodes verwachten expliciet countryCode
-    articleCountry: ENV.TECDOC_ARTICLE_COUNTRIES[0],
-    ...params,
+/** Veel voorkomende defaultvelden – worden per call toegevoegd tenzij overschreven. */
+const COMMON_DEFAULTS = {
+  lang: ENV.TECDOC_LANG_DEFAULT,
+  country: ENV.TECDOC_LINKAGE_COUNTRY,
+  countryCode: ENV.TECDOC_LINKAGE_COUNTRY,
+  articleCountry:
+    ENV.TECDOC_ARTICLE_COUNTRIES[0] ?? ENV.TECDOC_LINKAGE_COUNTRY,
+}
+
+/** Verwijdert undefined/null waarden uit een object. */
+function clean<T extends Record<string, any>>(obj: T): T {
+  const out: Record<string, any> = {}
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === undefined || v === null) continue
+    out[k] = v
   }
-  bodyParams = normalizePaging(bodyParams)
+  return out as T
+}
 
-  const payload = { [resource]: bodyParams }
+/** Plakt ?api_key=... (of &api_key=...) aan de endpoint-URL als die nog niet aanwezig is. */
+function withApiKey(url: string, apiKey?: string) {
+  if (!apiKey) return url
+  const hasQuery = url.includes("?")
+  return url + (hasQuery ? "&" : "?") + "api_key=" + encodeURIComponent(apiKey)
+}
 
-  const res = await fetch(base, {
+/**
+ * Algemene TecDoc JSON-call.
+ *
+ * Belangrijk:
+ * - POST naar de *basis* jsonEndpoint (dus **niet** /<resource> achter de URL)
+ * - Body: { [resource]: { provider, ...fields } }
+ * - API key zetten we zowel als header **X-Api-Key** als in de query (?api_key=...)
+ * - Caller moet velden als `linkingTargetType: "P"` zelf toevoegen waar vereist
+ * - Pagination is *plat*: `page`, `perPage` (geen `{ number, size }`)
+ */
+export async function tecdocCall<T = any>(
+  resource: TecdocResource,
+  payload: Record<string, any>
+): Promise<T> {
+  const bodyObj: Record<string, any> = {
+    [resource]: clean({
+      provider: ENV.TECDOC_PROVIDER_ID,
+      ...COMMON_DEFAULTS,
+      ...payload,
+    }),
+  }
+
+  const url = withApiKey(TECDOC_ENDPOINT, ENV.TECDOC_API_KEY)
+
+  logDebug("REQUEST", { resource, url, body: bodyObj })
+
+  const res = await fetch(url, {
     method: "POST",
     headers: {
+      Accept: "application/json",
       "Content-Type": "application/json",
-      "X-Api-Key": ENV.TECDOC_API_KEY,
+      ...(ENV.TECDOC_API_KEY ? { "X-Api-Key": ENV.TECDOC_API_KEY } : {}),
     },
-    body: JSON.stringify(payload),
-    keepalive: true,
+    body: JSON.stringify(bodyObj),
+    cache: "no-store",
   })
 
-  const text = await res.text().catch(() => "")
-  logDebug("[TecDoc] REQUEST", { resource, url: base, body: payload })
-
-  if (!res.ok) {
-    throw new Error(`TecDoc ${resource} ${res.status}: ${text}`)
+  let data: any
+  try {
+    data = await res.json()
+  } catch {
+    const text = await res.text().catch(() => "")
+    data = { status: res.status, statusText: text || res.statusText }
   }
 
-  let json: any = {}
-  try { json = text ? JSON.parse(text) : {} } catch {
-    throw new Error(`TecDoc ${resource}: invalid JSON response`)
+  // TecDoc zet vaak {status,statusText} in de payload; behandel dat als fout.
+  if (!res.ok || (typeof data?.status === "number" && data.status >= 300)) {
+    logError("RESPONSE", data ?? { status: res.status, statusText: res.statusText })
+    // Geef de TecDoc payload terug zodat de caller status/statusText kan tonen/loggen.
+    return (data ??
+      ({ status: res.status, statusText: res.statusText } as any)) as T
   }
 
-  if (json?.status && json.status >= 300) {
-    // TecDoc kan fout in body signalleren met 200 OK
-    logDebug("[TecDoc] RESPONSE", json)
-  } else {
-    logDebug("[TecDoc] RESPONSE", { resource, status: json?.status ?? 200 })
-  }
-
-  return json as T
+  logDebug("RESPONSE", data)
+  return data as T
 }

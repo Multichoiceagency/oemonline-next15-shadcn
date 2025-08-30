@@ -81,29 +81,34 @@ const ENV = {
 "[project]/Documents/oemonline-next15-shadcn/lib/logger.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */ // lib/logger.ts
 __turbopack_context__.s([
     "logDebug",
     ()=>logDebug,
     "logError",
     ()=>logError
 ]);
-function logDebug(label, payload) {
+var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/Documents/oemonline-next15-shadcn/lib/env.ts [app-route] (ecmascript)");
+;
+function logDebug(label, data) {
+    if (!__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_DEBUG) return;
     try {
-        console.log(`[TecDoc] ${label}:`, JSON.stringify(payload));
+        console.log(`[TecDoc] ${label}`, data ?? "");
     } catch  {}
 }
-function logError(label, payload) {
+function logError(label, data) {
     try {
-        console.error(`[TecDoc][ERROR] ${label}:`, JSON.stringify(payload));
+        console.error(`[TecDoc][ERROR] ${label}:`, data ?? "");
     } catch  {}
 }
 }),
 "[project]/Documents/oemonline-next15-shadcn/lib/tecdoc.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */ __turbopack_context__.s([
-    "TecdocHttpError",
-    ()=>TecdocHttpError,
+/* eslint-disable @typescript-eslint/no-explicit-any */ // lib/tecdoc.ts
+__turbopack_context__.s([
+    "TECDOC_ENDPOINT",
+    ()=>TECDOC_ENDPOINT,
     "TecdocOps",
     ()=>TecdocOps,
     "qp",
@@ -118,111 +123,94 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$ne
 ;
 ;
 const TecdocOps = {
-    searchTerm: "articleSearchByTerm",
-    byPlate: "getVehiclesByKeyNumberPlates",
-    byVin: "getVehiclesByVIN",
-    byMotorId: "getVehicleIdsByMotor2",
     manufacturers: "getManufacturers",
-    models: "getModelSeries",
-    types: "getVehicleIdsByCriteria",
-    genericArticles: "getGenericArticles",
+    modelSeries: "getModelSeries",
+    modelSeries2: "getModelSeries2",
+    types: "getTypes",
+    types2: "getTypes2",
     amBrands: "getAmBrands",
-    articleById: "getArticleDirectSearchById",
-    articleImages: "getArticleImages",
+    genericArticles: "getGenericArticles",
+    genericArticlesByLinkingTarget: "getGenericArticlesByLinkingTarget",
     articleIdsWithState: "getArticleIdsWithState",
-    assignedArticlesByIds6: "getAssignedArticlesByIds6"
+    assignedByLinkingTarget: "getAssignedArticlesByLinkingTarget",
+    assignedByLinkingTarget2: "getAssignedArticlesByLinkingTarget2",
+    assignedByLinkingTarget3: "getAssignedArticlesByLinkingTarget3"
 };
-async function tecdocCall(resource, params = {}, init) {
-    const controller = new AbortController();
-    const timeout = setTimeout(()=>controller.abort(), 15000);
-    // inner payload mirrors browser client examples
-    const inner = {
-        provider: Number(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_PROVIDER_ID),
-        // many endpoints require these explicitly:
-        lang: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LANG_DEFAULT,
-        country: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY,
-        countryCode: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY,
-        articleCountry: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_ARTICLE_COUNTRIES[0],
-        ...params
-    };
-    // top-level key = functionName/resource
-    const body = {
-        [resource]: inner
-    };
-    if (__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_DEBUG) (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("REQUEST", {
-        resource,
-        url: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_BASE_JSON,
-        body
-    });
-    try {
-        const url = `${__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_BASE_JSON}?api_key=${encodeURIComponent(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY)}`;
-        const res = await fetch(url, {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                "X-Api-Key": __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY
-            },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-            ...init
-        });
-        clearTimeout(timeout);
-        const text = await res.text();
-        let json;
-        try {
-            json = JSON.parse(text);
-        } catch  {
-            json = {
-                raw: text
-            };
-        }
-        if (!res.ok) {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("RESPONSE", {
-                status: res.status,
-                statusText: res.statusText,
-                raw: text.slice(0, 500)
-            });
-            throw new TecdocHttpError(String(resource), res.status, res.statusText, text);
-        }
-        if (__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_DEBUG) (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("RESPONSE", {
-            resource,
-            status: json?.status,
-            statusText: json?.statusText,
-            dataLen: json?.data?.array?.length
-        });
-        return json;
-    } catch (err) {
-        if (err?.name === "AbortError") {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("TIMEOUT", {
-                resource
-            });
-            throw new TecdocHttpError(String(resource), 504, "Timeout", "Request timed out");
-        }
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("FETCH_ERROR", {
-            resource,
-            message: String(err?.message || err)
-        });
-        throw err;
-    }
-}
-class TecdocHttpError extends Error {
-    resource;
-    status;
-    statusText;
-    rawBody;
-    constructor(resource, status, statusText, rawBody){
-        super(`TecDoc ${resource} ${status}: ${statusText}`), this.resource = resource, this.status = status, this.statusText = statusText, this.rawBody = rawBody;
-    }
-}
-function qp(req, key, dflt) {
+function qp(req, key, def) {
     const url = new URL(req.url);
-    return (url.searchParams.get(key) ?? dflt)?.trim();
+    const val = url.searchParams.get(key);
+    return val == null ? def : val;
 }
-function qpn(req, key, dflt) {
+function qpn(req, key, def) {
     const v = qp(req, key);
-    if (!v) return dflt;
+    if (v == null) return def;
     const n = Number(v);
-    return Number.isFinite(n) ? n : dflt;
+    return Number.isFinite(n) ? n : def;
+}
+const TECDOC_ENDPOINT = __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_BASE_JSON || "https://webservice.tecalliance.services/pegasus-3-0/services/TecdocToCatDLB.jsonEndpoint";
+const COMMON_DEFAULTS = {
+    lang: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LANG_DEFAULT,
+    country: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY,
+    countryCode: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY,
+    articleCountry: __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_ARTICLE_COUNTRIES[0] ?? __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_LINKAGE_COUNTRY
+};
+function clean(obj) {
+    const out = {};
+    for (const [k, v] of Object.entries(obj))if (v != null) out[k] = v;
+    return out;
+}
+function withApiKey(url, key) {
+    if (!key) return url;
+    return url + (url.includes("?") ? "&" : "?") + "api_key=" + encodeURIComponent(key);
+}
+async function tecdocCall(resource, payload) {
+    const bodyObj = {
+        [resource]: clean({
+            provider: Number(__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_PROVIDER_ID),
+            ...COMMON_DEFAULTS,
+            ...payload
+        })
+    };
+    const url = withApiKey(TECDOC_ENDPOINT, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("REQUEST", {
+        resource,
+        url,
+        body: bodyObj
+    });
+    const res = await fetch(url, {
+        method: "POST",
+        headers: clean({
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            ...__TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY ? {
+                "X-Api-Key": __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$env$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["ENV"].TECDOC_API_KEY
+            } : {}
+        }),
+        body: JSON.stringify(bodyObj),
+        cache: "no-store"
+    });
+    let data;
+    try {
+        data = await res.json();
+    } catch  {
+        const text = await res.text().catch(()=>"");
+        data = {
+            status: res.status,
+            statusText: text || res.statusText
+        };
+    }
+    if (!res.ok || typeof data?.status === "number" && data.status >= 300) {
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logError"])("RESPONSE", data ?? {
+            status: res.status,
+            statusText: res.statusText
+        });
+        return data ?? {
+            status: res.status,
+            statusText: res.statusText
+        };
+    }
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$Documents$2f$oemonline$2d$next15$2d$shadcn$2f$lib$2f$logger$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["logDebug"])("RESPONSE", data);
+    return data;
 }
 }),
 "[project]/Documents/oemonline-next15-shadcn/app/api/assigned-articles-by-ids/route.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
