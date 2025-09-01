@@ -1,84 +1,68 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/env.ts
-// Helpers ---------------------------------------------------
-function req(name: string, fallback?: string) {
-  const v = process.env[name] ?? fallback
-  if (v === undefined) throw new Error(`Missing env var: ${name}`)
-  return v
+function toBool(v: any, def = false) {
+  if (v === undefined || v === null || v === "") return def
+  const s = String(v).trim().toLowerCase()
+  return ["1", "true", "yes", "y", "on"].includes(s)
+}
+function toNum(v: any, def: number) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : def
+}
+/** Parse CSV ("nl,be,lu") OR JSON ('["nl","be","lu"]') → string[] */
+function toStrArray(v: any): string[] {
+  if (!v) return []
+  const s = String(v).trim()
+  try {
+    const parsed = JSON.parse(s)
+    if (Array.isArray(parsed)) return parsed.map((x) => String(x))
+  } catch {
+    return s.split(",").map((x) => x.trim()).filter(Boolean)
+  }
+  return []
+}
+/** Validate target type (P/L/K/T/B/M). Fallback 'P'. */
+function toTargetType(v: any): "P" | "L" | "K" | "T" | "B" | "M" {
+  const s = String(v || "").trim().toUpperCase()
+  return (["P","L","K","T","B","M"] as const).includes(s as any) ? (s as any) : "P"
 }
 
-function optBool(name: string, def = false) {
-  const v = process.env[name]
-  if (v === undefined) return def
-  return ["1", "true", "yes", "on"].includes(String(v).toLowerCase())
-}
-
-function parseCsv(name: string, def: string[] = []) {
-  const v = process.env[name]
-  if (!v) return def
-  return v
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-}
-
-// Normalizer voor linkingTargetType (TecDoc Pegasus 3.0)
-// Geldige waarden (volgens onboarding guide):
-// P = Vehicle Type (Passenger + Motorcycle + LCV)
-// V = Passenger Car
-// L = LCV
-// B = Motorcycle
-// O = CV Type (Commercial + Tractor)
-// C = Commercial Vehicle
-// T = Tractor
-// M = Engine
-// A = Axle
-// K = CV Body Type
-// H = HMD Vehicle
-function normalizeLinkingTargetType(
-  input?: string
-): "P" | "V" | "L" | "B" | "O" | "C" | "T" | "M" | "A" | "K" | "H" {
-  const s = (input || "").toUpperCase()
-  if (["P"].includes(s)) return "P"
-  if (["V"].includes(s)) return "V"
-  if (["L"].includes(s)) return "L"
-  if (["B"].includes(s)) return "B"
-  if (["O"].includes(s)) return "O"
-  if (["C"].includes(s)) return "C"
-  if (["T"].includes(s)) return "T"
-  if (["M"].includes(s)) return "M"
-  if (["A"].includes(s)) return "A"
-  if (["K"].includes(s)) return "K"
-  if (["H"].includes(s)) return "H"
-  return "V"
-}
-
-// ENV object ------------------------------------------------
 export const ENV = {
-  // --- TecDoc credentials ---
-  TECDOC_PROVIDER_ID: req("TECDOC_PROVIDER_ID"),
-  TECDOC_API_KEY: req("TECDOC_API_KEY"),
+  // TecDoc base
+  TECDOC_BASE_JSON: process.env.TECDOC_BASE_JSON || "",
+  TECDOC_API_KEY: process.env.TECDOC_API_KEY || "",
+  TECDOC_PROVIDER_ID: process.env.TECDOC_PROVIDER_ID || "",
 
-  // --- Defaults ---
+  // Locale / geo
   TECDOC_LANG_DEFAULT: process.env.TECDOC_LANG_DEFAULT || "nl",
-  TECDOC_LANGS: parseCsv("TECDOC_LANGS", ["nl"]),
-  TECDOC_ARTICLE_COUNTRIES: parseCsv("TECDOC_ARTICLE_COUNTRIES", ["nl"]),
+  TECDOC_LANGS: toStrArray(process.env.TECDOC_LANGS),
   TECDOC_LINKAGE_COUNTRY: process.env.TECDOC_LINKAGE_COUNTRY || "nl",
+  TECDOC_COUNTRY_GROUP: process.env.TECDOC_COUNTRY_GROUP || undefined,
+  TECDOC_CURRENCY: process.env.TECDOC_CURRENCY || undefined,
 
-  // --- Base endpoint Pegasus 3.0 ---
-  TECDOC_BASE_JSON:
-    process.env.TECDOC_BASE_JSON ||
-    "https://webservice.tecalliance.services/pegasus-3-0/services/TecdocToCatDLB.jsonEndpoint",
+  // Articles
+  TECDOC_ARTICLE_COUNTRIES: toStrArray(process.env.TECDOC_ARTICLE_COUNTRIES),
 
-  // --- Vehicle type filter ---
-  TECDOC_LINKING_TARGET_TYPE: normalizeLinkingTargetType(
-    process.env.TECDOC_LINKING_TARGET_TYPE || "P"
+  // Target type (personenauto standaard)
+  TECDOC_DEFAULT_TARGET: toTargetType(
+    process.env.TECDOC_DEFAULT_TARGET ?? process.env.TECDOC_LINKING_TARGET_TYPE
   ),
 
-  // --- Extra opties ---
-  TECDOC_PLATE_ENABLED: optBool("TECDOC_PLATE_ENABLED", false),
-  TECDOC_PLATE_COUNTRY: process.env.TECDOC_PLATE_COUNTRY || "nl",
-  TECDOC_DOWNLOAD_IMAGES: optBool("TECDOC_DOWNLOAD_IMAGES", false),
-  TECDOC_DEBUG: optBool("TECDOC_DEBUG", false),
-} as const
+  // Plate lookup (tenant-specific)
+  TECDOC_PLATE_ENABLED: toBool(process.env.TECDOC_PLATE_ENABLED, false),
+  TECDOC_PLATE_COUNTRY: process.env.TECDOC_PLATE_COUNTRY || process.env.TECDOC_LINKAGE_COUNTRY || "nl",
+  TECDOC_PLATE_KEY_SYSTEM_NUMBER: process.env.TECDOC_PLATE_KEY_SYSTEM_NUMBER || "",
 
-export type EnvShape = typeof ENV
+  // Misc
+  TECDOC_DOWNLOAD_IMAGES: toBool(process.env.TECDOC_DOWNLOAD_IMAGES, false),
+  TECDOC_DEBUG: toBool(process.env.TECDOC_DEBUG, false),
+  TECDOC_TIMEOUT_MS: toNum(process.env.TECDOC_TIMEOUT_MS, 15000),
+
+  // Supabase / DB / Secrets (server-only)
+  SUPABASE_URL: process.env.SUPABASE_URL || "",
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
+  JWT_SECRET: process.env.JWT_SECRET || "",
+  COOKIE_SECRET: process.env.COOKIE_SECRET || "",
+  DATABASE_URL: process.env.DATABASE_URL || "",
+  DATABASE_EXTRA: process.env.DATABASE_EXTRA || "",
+}

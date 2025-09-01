@@ -1,8 +1,14 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/api/brands/route": "app/api/brands/route.js",
+  "/api/plates/route": "app/api/plates/route.js",
+  "/api/vehicle-details/route": "app/api/vehicle-details/route.js",
   "/api/vehicles/route": "app/api/vehicles/route.js",
-  "/dashboard/catalog/brands/page": "app/dashboard/catalog/brands/page.js",
   "/dashboard/catalog/categories/page": "app/dashboard/catalog/categories/page.js",
+  "/dashboard/catalog/motor/page": "app/dashboard/catalog/motor/page.js",
   "/dashboard/catalog/plate/page": "app/dashboard/catalog/plate/page.js",
-  "/dashboard/catalog/search/page": "app/dashboard/catalog/search/page.js"
+  "/dashboard/catalog/search/page": "app/dashboard/catalog/search/page.js",
+  "/dashboard/catalog/vehicles/page": "app/dashboard/catalog/vehicles/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js"
 }
